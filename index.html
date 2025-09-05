@@ -387,12 +387,9 @@
             });
             
             
-            // Restore previous value if still valid
-            if(currentValue.startsWith('obj') && parseInt(currentValue.substr(3)) >= numObjectives) {
-                select.value = 'hypervolume';
-            } else {
-                select.value = currentValue;
-            }
+          
+            select.value = currentValue;
+            
         }
 
         function calculateColorValue(point, mapping) {
