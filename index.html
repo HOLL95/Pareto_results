@@ -18,7 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Objective Pareto Matrix Visualizer</title>
+    <title>M4D2 Results</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
         body {
@@ -277,7 +277,7 @@
             <h3>Multi-Objective Pareto Front Explorer</h3>
             <p><strong>Click on any point</strong> to highlight it across all subplots and see detailed information.</p>
             <p><strong>Hover over points</strong> to see values for that 2D projection.</p>
-            <p><strong>Each subplot</strong> shows a different pair of objectives from your multi-dimensional Pareto front.</p>
+            <p><strong>Each subplot</strong> shows a different pair of objectives from the multi-dimensional Pareto front.</p>
             
             <div class="stats-panel" id="statsPanel"></div>
             <div class="color-legend" id="colorLegend"></div>
@@ -290,6 +290,7 @@
         import { loadDataFile } from './dataLoader.js';
         const parameters = await loadDataFile('M4D2/Scores/pareto_parameters.txt');
         const scores = await loadDataFile('M4D2/Scores/Colour_scores.txt');
+        const raw_scores=await loadDataFile('M4D2/Scores/scores.txt')
         const matrixContainer = document.querySelector('.matrix-container');
         const width = matrixContainer.offsetWidth;
         const numObjectives=parameters.headers.length-1;
@@ -330,9 +331,7 @@
                                 x => format_params.has(x) ? d3.format(".1e")(x) : x
                             ])
                             );
-                
-        
-        console.log(formatters)
+
         // Clear existing options
         colormappingSelect.innerHTML = '';
         
@@ -433,11 +432,137 @@
                     createSubplot(mainG, row, col, colorScale, colormapping);
                 }
             }
+            createPolarPlot(mainG);
 
             updateColorLegend(colorScale, colormapping);
             updateStats();
         }
+        function createPolarPlot(parent) {
+            const xPos = Math.floor(numObjectives*9/16) * (subplotSize + subplotPadding);
+            const yPos =  (subplotSize + subplotPadding);
+            const polarG = parent.append("g")
+                .attr("class", "polar-subplot")
+                .attr("transform", `translate(${xPos + subplotSize},${yPos + subplotSize})`);
 
+            const radius = (subplotSize);
+            
+            // Create background circle
+            polarG.append("circle")
+                .attr("r", radius)
+                .attr("fill", "white")
+                .attr("stroke", "#e0e0e0")
+                .attr("stroke-width", 1);
+
+            // Create radial grid lines
+            const numGridLines = 4;
+            for(let i = 1; i <= numGridLines; i++) {
+                polarG.append("circle")
+                    .attr("r", (radius * i) / numGridLines)
+                    .attr("fill", "none")
+                    .attr("stroke", "#f0f0f0")
+                    .attr("stroke-width", 0.5);
+            }
+
+            // Add metric axes (spokes)
+            const numMetrics = raw_scores.headers.length;
+            const angleStep = (2 * Math.PI) / numMetrics;
+            
+            raw_scores.headers.forEach((metric, i) => {
+                const angle = i * angleStep - Math.PI/2; // Start from top
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+                
+                // Draw spoke
+                polarG.append("line")
+                    .attr("x1", 0).attr("y1", 0)
+                    .attr("x2", x).attr("y2", y)
+                    .attr("stroke", "#e0e0e0")
+                    .attr("stroke-width", 1);
+                
+                // Add label
+                const labelRadius = radius + 15;
+                const labelX = Math.cos(angle) * labelRadius;
+                const labelY = Math.sin(angle) * labelRadius;
+                
+                polarG.append("text")
+                    .attr("x", labelX)
+                    .attr("y", labelY)
+                    .attr("text-anchor", "middle")
+                    .attr("dominant-baseline", "central")
+                    .attr("font-size", "12px")
+                    .attr("fill", "#666")
+                    .text(metric);
+            });
+
+            // Store reference for updates
+            //polarG.attr("data-row", row).attr("data-col", col);
+        }
+        function updatePolarPlots(selectedPoint) {
+            const polarG = d3.select(".polar-subplot");
+            
+            if(!selectedPoint) {
+                // Clear the polar plot
+                polarG.selectAll(".data-polygon, .data-point").remove();
+                return;
+            }
+
+            const radius = subplotSize;
+            const scoreData = raw_scores.data[selectedPoint.id];
+            const numMetrics = raw_scores.headers.length;
+            const angleStep = (2 * Math.PI) / numMetrics;
+
+            // Remove old data
+            polarG.selectAll(".data-polygon, .data-point").remove();
+
+            // Create data points (scores are already normalized)
+            const dataPoints = raw_scores.headers.map((header, i) => {
+                const angle = i * angleStep - Math.PI/2;
+                const normalizedValue = 1-scoreData[i]; // Already normalized
+                const r = normalizedValue * radius;
+                return {
+                    x: Math.cos(angle) * r,
+                    y: Math.sin(angle) * r,
+                    value: scoreData[i],
+                    metric: header
+                };
+            });
+
+            // Create polygon path
+            const line = d3.line()
+                .x(d => d.x)
+                .y(d => d.y)
+                .curve(d3.curveLinearClosed);
+
+            polarG.append("path")
+                .datum(dataPoints)
+                .attr("class", "data-polygon")
+                .attr("d", line)
+                .attr("fill", "rgba(102, 126, 234, 0.3)")
+                .attr("stroke", "#667eea")
+                .attr("stroke-width", 2);
+
+            // Add data points
+            polarG.selectAll(".data-point")
+                .data(dataPoints)
+                .enter()
+                .append("circle")
+                .attr("class", "data-point")
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y)
+                .attr("r", 3)
+                .attr("fill", "#667eea")
+                .attr("stroke", "white")
+                .attr("stroke-width", 1)
+                .on("mouseover", function(event, d) {
+                    tooltip.style("opacity", 1)
+                        .html(`<strong>${d.metric}</strong><br/>Score: ${(100*(1-d.value)).toFixed(1)}%`)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 10) + "px");
+                })
+                .on("mouseout", function() {
+                    tooltip.style("opacity", 0);
+                });
+        }
         function createSubplot(parent, row, col, colorScale, colormapping) {
             const xPos = col * (subplotSize + subplotPadding);
             const yPos = (row-1) * (subplotSize + subplotPadding);
@@ -538,7 +663,9 @@
                     // Update all points across all subplots
                     d3.selectAll(".point")
                         .classed("selected", p => p.id === selectedPointId);
-                    
+                    const selectedPoint = selectedPointId !== null ? 
+                        paretoPoints.find(p => p.id === selectedPointId) : null;
+                    updatePolarPlots(selectedPoint);
                     updateStats();
                     
                     console.log("Selected point:", d);
@@ -591,7 +718,7 @@
                     .text(displayValue.toFixed(3));
             }
         }
-
+        
         function getColorMappingLabel(mapping) {
             const labels = {
                 'hypervolume': 'Hypervolume Contribution',
@@ -658,7 +785,6 @@
                 
                 const objList = detailItem.append("div")
                     .style("font-size", "0.9em");
-                console.log(selectedPoint)
                 for (let i=0; i<numObjectives-1; i++ ){
                     if (format_params.has(parameters.headers[i+1])){
                         objList.append("div")
