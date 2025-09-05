@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+    window.MathJax = {
+        tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+        },
+        startup: {
+        ready: () => {
+            console.log('MathJax is loaded and ready.');
+            MathJax.startup.defaultReady();
+        }
+        }
+    };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Objective Pareto Matrix Visualizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 2000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9em;
+            text-align: center;
+        }
+
+        select, button {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select:hover, button:hover {
+            border-color: #667eea;
+            transform: translateY(-1px);
+        }
+
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .matrix-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            overflow: auto;
+        }
+
+        .subplot {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+
+        .subplot.selected {
+            border: 3px solid #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .point {
+            cursor: pointer;
+            stroke: white;
+            stroke-width: 1;
+            transition: all 0.2s ease;
+        }
+
+        .point:hover {
+            stroke-width: 2;
+            r: 4;
+        }
+
+        .point.selected {
+            stroke: #ff6b6b;
+            stroke-width: 3;
+            r: 6;
+        }
+
+        .axis {
+            font-size: 10px;
+        }
+
+        .axis-label {
+            font-size: 11px;
+            font-weight: 600;
+            fill: #666;
+        }
+
+        .subplot-title {
+            font-size: 12px;
+            font-weight: 600;
+            fill: #444;
+            text-anchor: middle;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+            max-width: 250px;
+        }
+
+        .info-panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .info-panel h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+
+        .color-legend {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+        }
+
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .control-group {
+                width: 100%;
+            }
+
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Multi-Objective Pareto Matrix Visualizer</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="colormap">Color Map:</label>
+                <select id="colormap">
+                    <option value="viridis">Viridis</option>
+                    <option value="plasma">Plasma</option>
+                    <option value="inferno">Inferno</option>
+                    <option value="magma">Magma</option>
+                    <option value="cool">Cool</option>
+                    <option value="warm">Warm</option>
+                    <option value="rainbow">Rainbow</option>
+                    <option value="turbo">Turbo</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="colormapping">Color Mapping:</label>
+                <select id="colormapping">
+                </select>
+            </div>
+        </div>
+
+        <div class="matrix-container">
+            <svg id="matrix-plot"></svg>
+        </div>
+
+        <div class="info-panel">
+            <h3>Multi-Objective Pareto Front Explorer</h3>
+            <p><strong>Click on any point</strong> to highlight it across all subplots and see detailed information.</p>
+            <p><strong>Hover over points</strong> to see values for that 2D projection.</p>
+            <p><strong>Each subplot</strong> shows a different pair of objectives from your multi-dimensional Pareto front.</p>
+            
+            <div class="stats-panel" id="statsPanel"></div>
+            <div class="color-legend" id="colorLegend"></div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script type="module">
+        import { loadDataFile } from './dataLoader.js';
+        const parameters = await loadDataFile('M4D2/Scores/pareto_parameters.txt');
+        const scores = await loadDataFile('M4D2/Scores/Colour_scores.txt');
+        const matrixContainer = document.querySelector('.matrix-container');
+        const width = matrixContainer.offsetWidth;
+        const numObjectives=parameters.headers.length-1;
+        const subplotSize = width/(numObjectives-1+(0.1*(numObjectives-1)));
+        const subplotPadding = subplotSize*0.1;
+        const colormapSelect = document.getElementById('colormap');
+        const colormappingSelect = document.getElementById('colormapping');
+        const options_map=scores.headers.map((name, index) => ({
+                                            value: index,
+                                            label: name,
+                                            }));
+        const label_map={'E0_mean': '$E^0 \\mu$ (V)', 
+                        'E0_std_1': '$E^0 \\sigma_{FTACV}$ (V)', 
+                        'E0_std_2': '$E^0 \\sigma_{SWV}$ (V)', 
+                        'k0': '$k_0$ ($s^{-1}$)', 
+                        'gamma_1': '$\\Gamma_{FTACV}$ (mol cm$^{-2}$)', 
+                        'gamma_2': '$\\Gamma_{SWV}$ (mol cm$^{-2}$)', 
+                        'Ru': '$R_u$ ($\\Omega$)', 
+                        'Cdl': '$C_{dl}$ (F cm$^{-2}$)', 
+                        'alpha': '$\\alpha$'}
+        const unicode_map = {
+                        'E0_mean': 'E⁰ μ (V)',
+                        'E0_std_1': 'E⁰ σₐᵥ (V)',
+                        'E0_std_2': 'E⁰ σₛᵥ (V)', 
+                        'k0': 'k₀ (s⁻¹)',
+                        'gamma_1': 'Γₐᵥ (mol cm⁻²)',
+                        'gamma_2': 'Γₛᵥ(mol cm⁻²)',
+                        'Ru': 'Rᵤ (Ω)',
+                        'Cdl': 'C (F cm⁻²)',
+                        'alpha': 'α'
+                    };
+        
+        const format_params = new Set(["gamma_1", "gamma_2", "Cdl"]); // Use Set for faster lookup
+
+        const formatters = Object.fromEntries(
+                            parameters.headers.map(name => [
+                                name, 
+                                x => format_params.has(x) ? d3.format(".1e")(x) : x
+                            ])
+                            );
+                
+        
+        console.log(formatters)
+        // Clear existing options
+        colormappingSelect.innerHTML = '';
+        
+        // Add colormap options
+        options_map.forEach(option => {
+            const opt = document.createElement('option');
+            opt.value = option.value;
+            opt.textContent = option.label;
+            colormappingSelect.appendChild(opt);
+        });
+        // Multi-dimensional Pareto points data
+        
+        let selectedPointId = null;
+
+        // Color scales
+        const colorMaps = {
+            viridis: d3.interpolateViridis,
+            plasma: d3.interpolatePlasma,
+            inferno: d3.interpolateInferno,
+            magma: d3.interpolateMagma,
+            cool: d3.interpolateCool,
+            warm: d3.interpolateWarm,
+            rainbow: d3.interpolateRainbow,
+            turbo: d3.interpolateTurbo
+        };
+
+        // Matrix layout parameters
+        const matrixMargin = {top: 40, right: 20, bottom: 40, left: 60};
+        const paretoPoints = parameters.data.map((objectives, index) => ({
+                                            id: index,
+                                            objectives: objectives
+                                            }));
+        
+        // Create main SVG
+        const svg = d3.select("#matrix-plot");
+        const tooltip = d3.select("#tooltip");
+
+        updateColorMappingOptions();
+        updateMatrix();
+        
+
+        
+
+        function updateColorMappingOptions() {
+            const select = document.getElementById('colormapping');
+            const currentValue = select.value;
+            
+            // Clear existing objective options
+            Array.from(select.options).forEach(option => {
+                if(option.value.startsWith('obj')) {
+                    option.remove();
+                }
+            });
+            
+            
+            // Restore previous value if still valid
+            if(currentValue.startsWith('obj') && parseInt(currentValue.substr(3)) >= numObjectives) {
+                select.value = 'hypervolume';
+            } else {
+                select.value = currentValue;
+            }
+        }
+
+        function calculateColorValue(point, mapping) {
+            console.log(mapping)
+            return scores.data[point.id][mapping];
+        }
+
+        function updateMatrix() {
+            if(paretoPoints.length === 0) return;
+            
+            const colormap = document.getElementById('colormap').value;
+            const colormapping = document.getElementById('colormapping').value;
+
+            // Calculate matrix dimensions
+            const matrixSize = numObjectives - 2;
+            const totalWidth = matrixSize * (subplotSize + subplotPadding) + matrixMargin.left + matrixMargin.right;
+            const totalHeight = matrixSize * (subplotSize + subplotPadding) + matrixMargin.top + matrixMargin.bottom;
+
+            // Update SVG size
+            svg.attr("width", totalWidth)
+               .attr("height", totalHeight);
+
+            // Clear previous content
+            svg.selectAll("*").remove();
+
+            const mainG = svg.append("g")
+                .attr("transform", `translate(${matrixMargin.left},${matrixMargin.top})`);
+
+            // Calculate color values
+            const colorValues = paretoPoints.map(d => calculateColorValue(d, colormapping));
+            const colorScale = d3.scaleSequential(colorMaps[colormap])
+                .domain(d3.extent(colorValues));
+
+            // Create subplots for lower triangular matrix
+            for(let row = 0; row < numObjectives-1; row++) {
+                for(let col = 0; col < row; col++) {
+                    createSubplot(mainG, row, col, colorScale, colormapping);
+                }
+            }
+
+            updateColorLegend(colorScale, colormapping);
+            updateStats();
+        }
+
+        function createSubplot(parent, row, col, colorScale, colormapping) {
+            const xPos = col * (subplotSize + subplotPadding);
+            const yPos = (row-1) * (subplotSize + subplotPadding);
+            const subplotG = parent.append("g")
+                .attr("class", "subplot")
+                .attr("transform", `translate(${xPos},${yPos})`);
+
+            // Create background
+            subplotG.append("rect")
+                .attr("width", subplotSize)
+                .attr("height", subplotSize)
+                .attr("fill", "white")
+                .attr("stroke", "#e0e0e0")
+                .attr("stroke-width", 1)
+                .attr("rx", 4);
+
+            // Create scales for this subplot
+            const xData = paretoPoints.map(d => d.objectives[col]);
+            const yData = paretoPoints.map(d => d.objectives[row]);
+            
+            const xScale = d3.scaleLinear()
+                .domain(d3.extent(xData))
+                .range([20, subplotSize - 20])
+                .nice();
+                
+            const yScale = d3.scaleLinear()
+                .domain(d3.extent(yData))
+                .range([subplotSize - 20, 20])
+                .nice();
+            let xAxis;
+            let yAxis;
+            xAxis = d3.axisBottom(xScale).ticks(3).tickSize(-subplotSize + 40).tickFormat(formatters[parameters.headers[col + 1]]);
+            yAxis = d3.axisLeft(yScale).ticks(3).tickSize(-subplotSize + 40).tickFormat(formatters[parameters.headers[row + 1]]);
+            subplotG.append("g")
+                .attr("class", "axis")
+                .attr("transform", `translate(0,${subplotSize - 20})`)
+                .call(xAxis)
+                .selectAll(".tick line")
+                .attr("stroke", "#f0f0f0");
+
+            subplotG.append("g")
+                .attr("class", "axis")
+                .attr("transform", "translate(20,0)")
+                .call(yAxis)
+                .selectAll(".tick line")
+                .attr("stroke", "#f0f0f0");
+
+            // Add axis labels
+            if (row==numObjectives-2){
+                 subplotG.append("foreignObject")
+                .attr("x", subplotSize / 2 -50)  // Adjust width as needed
+                .attr("y", subplotSize + 5)
+                .attr("width", 120)
+                .attr("height", 20)
+                .append("xhtml:div")
+                .style("text-align", "center")
+                .style("font-size", "11px")
+                .style("font-weight", "600")
+                .style("color", "#666")
+                .html(label_map[parameters.headers[col + 1]]);
+            
+            // Trigger MathJax rendering
+            MathJax.typesetPromise();
+
+               
+            }
+           
+            if (col==0){
+                subplotG.append("foreignObject")
+                .attr("x", -150)  // Adjust width as needed
+                .attr("y", -50)
+                .attr("width", 120)
+                .attr("height", 20)
+                .attr("transform", "rotate(-90)")
+                .append("xhtml:div")
+                .style("text-align", "center")
+                .style("font-size", "11px")
+                .style("font-weight", "600")
+                .style("color", "#666")
+                .html(label_map[parameters.headers[row+1]]);
+            }
+
+
+            // Add points
+            const points = subplotG.selectAll(".point")
+                .data(paretoPoints)
+                .enter()
+                .append("circle")
+                .attr("class", "point")
+                .attr("cx", d => xScale(d.objectives[col]))
+                .attr("cy", d => yScale(d.objectives[row]))
+                .attr("r", 2.5)
+                .attr("fill", d => colorScale(calculateColorValue(d, colormapping)))
+                .classed("selected", d => d.id === selectedPointId)
+                .on("click", function(event, d) {
+                    selectedPointId = selectedPointId === d.id ? null : d.id;
+                    
+                    // Update all points across all subplots
+                    d3.selectAll(".point")
+                        .classed("selected", p => p.id === selectedPointId);
+                    
+                    updateStats();
+                    
+                    console.log("Selected point:", d);
+                })
+                .on("mouseover", function(event, d) {
+                    const colorValue = calculateColorValue(d, colormapping);
+                    tooltip.style("opacity", 1)
+                        .html(`
+                            <strong>This view:</strong><br/>
+                            X (${unicode_map[parameters.headers[col + 1]]}): ${d3.format(".1e")(d.objectives[col])}<br/>
+                            Y (${unicode_map[parameters.headers[row + 1]]}): ${d3.format(".1e")(d.objectives[row])}<br/>
+                            <strong>Color Value:</strong> ${colorValue.toFixed(3)}
+                        `)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 10) + "px");
+                })
+                .on("mouseout", function() {
+                    tooltip.style("opacity", 0);
+                });
+        }
+
+        function updateColorLegend(colorScale, mapping) {
+            const legend = d3.select("#colorLegend");
+            legend.selectAll("*").remove();
+            
+            const legendTitle = legend.append("div")
+                .style("font-weight", "600")
+                .style("margin-bottom", "10px")
+                .text(`Color represents: ${getColorMappingLabel(mapping)}`);
+            
+            const legendItems = legend.append("div")
+                .style("display", "flex")
+                .style("gap", "15px")
+                .style("flex-wrap", "wrap");
+            
+            // Create 5 legend items
+            for(let i = 0; i < 5; i++) {
+                const value = i / 4;
+                const color = colorScale(colorScale.domain()[0] + value * (colorScale.domain()[1] - colorScale.domain()[0]));
+                
+                const item = legendItems.append("div")
+                    .attr("class", "legend-item");
+                
+                item.append("div")
+                    .attr("class", "legend-color")
+                    .style("background-color", color);
+                
+                const displayValue = colorScale.domain()[0] + value * (colorScale.domain()[1] - colorScale.domain()[0]);
+                item.append("span")
+                    .text(displayValue.toFixed(3));
+            }
+        }
+
+        function getColorMappingLabel(mapping) {
+            const labels = {
+                'hypervolume': 'Hypervolume Contribution',
+                'distance': 'Distance from Origin',
+                'dominance': 'Dominance Score',
+                'crowding': 'Crowding Distance',
+                'index': 'Point Index'
+            };
+            
+            if(mapping.startsWith('obj')) {
+                const objNum = parseInt(mapping.substr(3)) + 1;
+                return `Objective ${objNum}`;
+            }
+            
+            return labels[mapping] || mapping;
+        }
+
+        function updateStats() {
+            const statsPanel = d3.select("#statsPanel");
+            statsPanel.selectAll("*").remove();
+            
+            // Basic statistics
+            const numPoints = paretoPoints.length;
+            const avgDistance = d3.mean(paretoPoints, d => 
+                Math.sqrt(d.objectives.reduce((sum, obj) => sum + obj * obj, 0))
+            );
+            
+            let selectedPoint = null;
+            if(selectedPointId !== null) {
+                selectedPoint = paretoPoints.find(p => p.id === selectedPointId);
+            }
+            
+            // Create stat items
+            const stats = [
+                { label: "Total Points", value: numPoints },
+                { label: "Objectives", value: numObjectives },
+                { label: "Avg Distance", value: avgDistance.toFixed(3) },
+                { label: "Selected Point", value: selectedPoint ? `#${selectedPoint.id}` : "None" }
+            ];
+            
+            stats.forEach(stat => {
+                const item = statsPanel.append("div")
+                    .attr("class", "stat-item");
+                
+                item.append("div")
+                    .attr("class", "stat-value")
+                    .text(stat.value);
+                
+                item.append("div")
+                    .attr("class", "stat-label")
+                    .text(stat.label);
+            });
+            
+            // If a point is selected, show its detailed info
+            if(selectedPoint) {
+                const detailItem = statsPanel.append("div")
+                    .attr("class", "stat-item")
+                    .style("grid-column", "1 / -1");
+                
+                detailItem.append("div")
+                    .style("font-weight", "600")
+                    .style("margin-bottom", "8px")
+                    .text(`Selected Point #${selectedPoint.id} Details:`);
+                
+                const objList = detailItem.append("div")
+                    .style("font-size", "0.9em");
+                console.log(selectedPoint)
+                for (let i=0; i<numObjectives-1; i++ ){
+                    if (format_params.has(parameters.headers[i+1])){
+                        objList.append("div")
+                        .html(`${label_map[parameters.headers[i+1]]}: ${d3.format(".1e")(selectedPoint.objectives[i])}`);
+                    }
+                    else{
+                         objList.append("div")
+                        .html(`${label_map[parameters.headers[i+1]]}: ${selectedPoint.objectives[i].toFixed(3)}`);
+                    }                    
+                }
+
+                 MathJax.typesetPromise();
+            }
+        }
+
+        // Event listeners
+        document.getElementById('colormap').addEventListener('change', updateMatrix);
+        document.getElementById('colormapping').addEventListener('change', updateMatrix);
+
+        // Initialize
+        generateRandomPoints();
+    </script>
+</body>
+</html>
