@@ -156,7 +156,7 @@ export function updateDataGrid(initialDataSets,dygraphInstances) {
                     fourthRow, 
                     swvcellWidth - (padding * 0.8), 
                     cellHeight, 
-                    `SWV ${col + 7}`, 
+                    `SWV ${sfreqs[col]+6} Hz`, 
                     cellIndex++,colstack(xaxis,initialDataSets[12+(col*2)].data, initialDataSets[13+(col*2)].data),dygraphInstances
                 );
             }
