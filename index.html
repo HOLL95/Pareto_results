@@ -15,233 +15,15 @@
         }
     };
     </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dygraph/2.2.1/dygraph.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dygraph/2.2.1/dygraph.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>M4D2 Results</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-
-        .container {
-            max-width: 2000px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            text-align: center;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 30px;
-            font-size: 2.5em;
-            font-weight: bold;
-        }
-
-        .controls {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .control-group label {
-            font-weight: 600;
-            color: #555;
-            font-size: 0.9em;
-            text-align: center;
-        }
-
-        select, button {
-            padding: 10px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            background: white;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        select:hover, button:hover {
-            border-color: #667eea;
-            transform: translateY(-1px);
-        }
-
-        button {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            font-weight: 600;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .matrix-container {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-            overflow: auto;
-        }
-
-        .subplot {
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-        }
-
-        .subplot.selected {
-            border: 3px solid #667eea;
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
-        }
-
-        .point {
-            cursor: pointer;
-            stroke: white;
-            stroke-width: 1;
-            transition: all 0.2s ease;
-        }
-
-        .point:hover {
-            stroke-width: 2;
-            r: 4;
-        }
-
-        .point.selected {
-            stroke: #ff6b6b;
-            stroke-width: 3;
-            r: 6;
-        }
-
-        .axis {
-            font-size: 10px;
-        }
-
-        .axis-label {
-            font-size: 11px;
-            font-weight: 600;
-            fill: #666;
-        }
-
-        .subplot-title {
-            font-size: 12px;
-            font-weight: 600;
-            fill: #444;
-            text-anchor: middle;
-        }
-
-        .tooltip {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 1000;
-            max-width: 250px;
-        }
-
-        .info-panel {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        .info-panel h3 {
-            margin-top: 0;
-            color: #667eea;
-        }
-
-        .color-legend {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 15px;
-            flex-wrap: wrap;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 12px;
-        }
-
-        .legend-color {
-            width: 15px;
-            height: 15px;
-            border-radius: 3px;
-        }
-
-        .stats-panel {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .stat-item {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-
-        .stat-value {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .stat-label {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        @media (max-width: 768px) {
-            .controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .control-group {
-                width: 100%;
-            }
-
-            .container {
-                padding: 15px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    
 </head>
 <body>
     <div class="container">
@@ -282,15 +64,23 @@
             <div class="stats-panel" id="statsPanel"></div>
             <div class="color-legend" id="colorLegend"></div>
         </div>
+        <div id="dataGridContainer"></div>
     </div>
 
     <div class="tooltip" id="tooltip"></div>
 
     <script type="module">
-        import { loadDataFile } from './dataLoader.js';
+        import { loadDataFile ,joinPath} from './dataLoader.js';
+        import {createCellWithDygraph, updateDataGrid, addSimulationTraceToCharts} from "./dygraph_handler.js"
+        import init, * as wasm from './biquad_wasm/pkg/biquad_wasm.js';
+        await init();
         const parameters = await loadDataFile('M4D2/Scores/pareto_parameters.txt');
         const scores = await loadDataFile('M4D2/Scores/Colour_scores.txt');
-        const raw_scores=await loadDataFile('M4D2/Scores/scores.txt')
+        const raw_scores=await loadDataFile('M4D2/Scores/scores.txt');
+        let isSimulationLoading = false;
+        let isPlottingInProgress = false;
+        export const dygraphInstances = [];
+        let traceCounter = 0;
         const matrixContainer = document.querySelector('.matrix-container');
         const width = matrixContainer.offsetWidth;
         const numObjectives=parameters.headers.length-1;
@@ -302,6 +92,7 @@
                                             value: index,
                                             label: name,
                                             }));
+        
         const label_map={'E0_mean': '$E^0 \\mu$ (V)', 
                         'E0_std_1': '$E^0 \\sigma_{FTACV}$ (V)', 
                         'E0_std_2': '$E^0 \\sigma_{SWV}$ (V)', 
@@ -322,7 +113,51 @@
                         'Cdl': 'C (F cm⁻²)',
                         'alpha': 'α'
                     };
+        const files=["FTACV-3_Hz-280_mV","FTACV-9_Hz-280_mV","FTACV-15_Hz-280_mV",
+                    'SWV-65_Hz-anodic', 'SWV-65_Hz-cathodic', 
+                    'SWV-75_Hz-anodic', 'SWV-75_Hz-cathodic',
+                     'SWV-85_Hz-anodic', 'SWV-85_Hz-cathodic',
+                      'SWV-100_Hz-anodic', 'SWV-100_Hz-cathodic',
+                       'SWV-115_Hz-anodic', 'SWV-115_Hz-cathodic', 
+                       'SWV-125_Hz-anodic', 'SWV-125_Hz-cathodic', 
+                       'SWV-135_Hz-anodic', 'SWV-135_Hz-cathodic', 
+                       'SWV-145_Hz-anodic', 'SWV-145_Hz-cathodic', 
+                       'SWV-150_Hz-anodic', 'SWV-150_Hz-cathodic', 
+                       'SWV-175_Hz-anodic', 'SWV-175_Hz-cathodic', 
+                       'SWV-200_Hz-anodic', 'SWV-200_Hz-cathodic', 
+                       'SWV-300_Hz-anodic', 'SWV-300_Hz-cathodic']
+        const simulations_map={};
+        let file_counter=0;
+        let start, end;
+        for (let i=0; i<213; i++){
+            simulations_map[i]={
+                loaded:false,
+                data:{}
+            }
+            if ((i%2)==0){
+                start=i;
+                end=i+2;
+                
+            }else{
+                start=i-1;
+                end=i+1;
+            }
+            simulations_map[i].file=`simulations_${start}_${end}.txt`;
+            for (let j=0; j<files.length; j++){
+                simulations_map[i].data[files[j]]={};
+            }
+        }
         
+        const initialDataSets = await Promise.all(
+                                        files.map(async (name, index) => ({
+                                            name: name,
+                                            data: (await loadDataFile(joinPath("./M4D2", "Data", name, "data.txt"))).data,
+                                            times: (await loadDataFile(joinPath("./M4D2", "Data", name, "times.txt"))).data,
+                                        }))
+                                        );
+        
+
+
         const format_params = new Set(["gamma_1", "gamma_2", "Cdl"]); // Use Set for faster lookup
 
         const formatters = Object.fromEntries(
@@ -344,7 +179,7 @@
         });
         // Multi-dimensional Pareto points data
         
-        let selectedPointId = null;
+        let selectedPointIds = [];
 
         // Color scales
         const colorMaps = {
@@ -393,7 +228,7 @@
         }
 
         function calculateColorValue(point, mapping) {
-            console.log(mapping)
+            //console.log(mapping)
             return scores.data[point.id][mapping];
         }
 
@@ -432,7 +267,8 @@
             createPolarPlot(mainG);
 
             updateColorLegend(colorScale, colormapping);
-            updateStats();
+            updateStats([])
+            updateDataGrid(initialDataSets,dygraphInstances);
         }
         function createPolarPlot(parent) {
             const xPos = Math.floor(numObjectives*9/16) * (subplotSize + subplotPadding);
@@ -494,71 +330,77 @@
             // Store reference for updates
             //polarG.attr("data-row", row).attr("data-col", col);
         }
-        function updatePolarPlots(selectedPoint) {
+        function updatePolarPlots(selectedPoints) {
             const polarG = d3.select(".polar-subplot");
-            
-            if(!selectedPoint) {
+            if(!selectedPoints) {
                 // Clear the polar plot
                 polarG.selectAll(".data-polygon, .data-point").remove();
                 return;
             }
+            let selectedPoint;
+            let colours=['#ff7f0e' ,"#2ca02c"];
+            let transparents=["rgba(255, 127, 14, 0.3)","rgba(44, 160, 44, 0.3)"]
+            polarG.selectAll("[class*='data-polygon'], [class*='data-point']").remove();
+            for (let i=0; i<selectedPoints.length; i++){
+                selectedPoint=selectedPoints[i]
+                const radius = subplotSize;
+                const scoreData = raw_scores.data[selectedPoint.id];
+                const numMetrics = raw_scores.headers.length;
+                const angleStep = (2 * Math.PI) / numMetrics;
 
-            const radius = subplotSize;
-            const scoreData = raw_scores.data[selectedPoint.id];
-            const numMetrics = raw_scores.headers.length;
-            const angleStep = (2 * Math.PI) / numMetrics;
+                // Remove old data
+               
 
-            // Remove old data
-            polarG.selectAll(".data-polygon, .data-point").remove();
-
-            // Create data points (scores are already normalized)
-            const dataPoints = raw_scores.headers.map((header, i) => {
-                const angle = i * angleStep - Math.PI/2;
-                const normalizedValue = 1-scoreData[i]; // Already normalized
-                const r = normalizedValue * radius;
-                return {
-                    x: Math.cos(angle) * r,
-                    y: Math.sin(angle) * r,
-                    value: scoreData[i],
-                    metric: header
-                };
-            });
-
-            // Create polygon path
-            const line = d3.line()
-                .x(d => d.x)
-                .y(d => d.y)
-                .curve(d3.curveLinearClosed);
-
-            polarG.append("path")
-                .datum(dataPoints)
-                .attr("class", "data-polygon")
-                .attr("d", line)
-                .attr("fill", "rgba(102, 126, 234, 0.3)")
-                .attr("stroke", "#667eea")
-                .attr("stroke-width", 2);
-
-            // Add data points
-            polarG.selectAll(".data-point")
-                .data(dataPoints)
-                .enter()
-                .append("circle")
-                .attr("class", "data-point")
-                .attr("cx", d => d.x)
-                .attr("cy", d => d.y)
-                .attr("r", 3)
-                .attr("fill", "#667eea")
-                .attr("stroke", "white")
-                .attr("stroke-width", 1)
-                .on("mouseover", function(event, d) {
-                    tooltip.style("opacity", 1)
-                        .html(`<strong>${d.metric}</strong><br/>Score: ${(100*(1-d.value)).toFixed(1)}%`)
-                        .style("left", (event.pageX + 10) + "px")
-                        .style("top", (event.pageY - 10) + "px");
-                })
-                .on("mouseout", function() {
-                    tooltip.style("opacity", 0);
+                // Create data points (scores are already normalized)
+                const dataPoints = raw_scores.headers.map((header, i) => {
+                    const angle = i * angleStep - Math.PI/2;
+                    const normalizedValue = 1-scoreData[i]; // Already normalized
+                    const r = normalizedValue * radius;
+                    return {
+                        x: Math.cos(angle) * r,
+                        y: Math.sin(angle) * r,
+                        value: scoreData[i],
+                        metric: header
+                    };
                 });
+
+                // Create polygon path
+                const line = d3.line()
+                    .x(d => d.x)
+                    .y(d => d.y)
+                    .curve(d3.curveLinearClosed);
+
+                polarG.append("path")
+                    .datum(dataPoints)
+                    .attr("class", "data-polygon")
+                    .attr("d", line)
+                    .attr("fill", transparents[i])
+                    .attr("stroke", colours[i])
+                    .attr("stroke-width", 2);
+
+                // Add data points
+                polarG.selectAll(`.data-point-${i}`)
+                    .data(dataPoints)
+                    .enter()
+                    .append("circle")
+                    .attr("class", `data-point data-point-${i}`)
+                    .attr("cx", d => d.x)
+                    .attr("cy", d => d.y)
+                    .attr("r", 3)
+                    .attr("fill", colours[i])
+                    .attr("stroke", "white")
+                    .attr("stroke-width", 1)
+                    .on("mouseover", function(event, d) {
+                        tooltip.style("opacity", 1)
+                            .html(`<strong>${d.metric}</strong><br/>Score: ${(100*(1-d.value)).toFixed(1)}%`)
+                            .style("left", (event.pageX + 10) + "px")
+                            .style("top", (event.pageY - 10) + "px");
+                    })
+                    .on("mouseout", function() {
+                        tooltip.style("opacity", 0);
+                    });
+                }
+            
         }
         function createSubplot(parent, row, col, colorScale, colormapping) {
             const xPos = col * (subplotSize + subplotPadding);
@@ -653,19 +495,73 @@
                 .attr("cy", d => yScale(d.objectives[row]))
                 .attr("r", 2.5)
                 .attr("fill", d => colorScale(calculateColorValue(d, colormapping)))
-                .classed("selected", d => d.id === selectedPointId)
-                .on("click", function(event, d) {
-                    selectedPointId = selectedPointId === d.id ? null : d.id;
+                .classed("selected", d => selectedPointIds.includes(d.id))
+                .classed("selected-first", d => selectedPointIds[0] === d.id)
+                .classed("selected-second", d => selectedPointIds[1] === d.id)
+                .on("click", async function(event, d) {
+                    // Ignore clicks if already processing
+                    if (isSimulationLoading || isPlottingInProgress) {
+                        console.log("Processing in progress");
+                        return;
+                    }
                     
-                    // Update all points across all subplots
-                    d3.selectAll(".point")
-                        .classed("selected", p => p.id === selectedPointId);
-                    const selectedPoint = selectedPointId !== null ? 
-                        paretoPoints.find(p => p.id === selectedPointId) : null;
-                    updatePolarPlots(selectedPoint);
-                    updateStats();
-                    
-                    console.log("Selected point:", d);
+                    try {
+                        // Set loading state
+                        isSimulationLoading = true;
+                        
+                        // Update UI to show loading state (optional)
+                        d3.select(this).classed("loading", true);
+                        
+                        // Update selection state for two points
+                        const clickedId = d.id;
+                        
+                        if (selectedPointIds.includes(clickedId)) {
+                            // Remove if already selected
+                            selectedPointIds = selectedPointIds.filter(id => id !== clickedId);
+                        } else if (selectedPointIds.length < 2) {
+                            // Add if less than 2 selected
+                            selectedPointIds.push(clickedId);
+                        } else {
+                            // Replace first selection if 2 already selected
+                            selectedPointIds = [selectedPointIds[1], clickedId];
+                        }
+                        
+                        // Update all points across all subplots
+                        d3.selectAll(".point")
+                            .classed("selected", p => selectedPointIds.includes(p.id))
+                            .classed("selected-first", p => selectedPointIds[0] === p.id)
+                            .classed("selected-second", p => selectedPointIds[1] === p.id);
+                        
+                        const selectedPoints = selectedPointIds.map(id => 
+                            paretoPoints.find(p => p.id === id)
+                        ).filter(p => p !== undefined);
+                        
+                        updatePolarPlots(selectedPoints.length > 0 ? selectedPoints : null);
+                        updateStats(selectedPoints);
+                        
+                        // Wait for simulation to load
+                        await loadSimulation(d);
+                        // Set plotting state
+                        isPlottingInProgress = true;
+                        
+                        // Add simulation traces and wait for completion
+                        for (let i=0; i<selectedPoints.length; i++){
+                            await addSimulationTraceToCharts(simulations_map[selectedPointIds[i]].data, files, dygraphInstances, i+1);
+                        }
+                        
+                        
+                        console.log("Selected points:", selectedPointIds);
+                        
+                    } catch (error) {
+                        console.error("Error loading simulation or plotting:", error);
+                    } finally {
+                        // Reset states
+                        isSimulationLoading = false;
+                        isPlottingInProgress = false;
+                        
+                        // Remove loading UI state
+                        d3.select(this).classed("loading", false);
+                    }
                 })
                 .on("mouseover", function(event, d) {
                     const colorValue = calculateColorValue(d, colormapping);
@@ -674,7 +570,7 @@
                             <strong>This view:</strong><br/>
                             X (${unicode_map[parameters.headers[col + 1]]}): ${d3.format(".1e")(d.objectives[col])}<br/>
                             Y (${unicode_map[parameters.headers[row + 1]]}): ${d3.format(".1e")(d.objectives[row])}<br/>
-                            <strong>Color Value:</strong> ${colorValue.toFixed(3)}
+                            <strong>Colour Value:</strong> ${colorValue.toFixed(3)}
                         `)
                         .style("left", (event.pageX + 10) + "px")
                         .style("top", (event.pageY - 10) + "px");
@@ -683,7 +579,46 @@
                     tooltip.style("opacity", 0);
                 });
         }
-
+        async function loadSimulation(index){
+            
+            if (simulations_map[index.id].loaded==false){
+                let second_idx;
+                if (index.id%2==0){
+                    second_idx=index.id+1
+                }else{
+                    second_idx=index.id-1;
+                }
+                let current_load;
+                let idxs=([second_idx, index.id]).sort((a, b) => a - b);
+                let cols =[1,2];
+                for (let i=0; i<files.length; i++){
+                    for (let j=0; j<2; j++){
+                        current_load= await loadDataFile(joinPath("M4D2", "simulations", files[i], simulations_map[idxs[j]].file))
+                        simulations_map[idxs[j]].data[files[i]]={
+                                                                    times:current_load.data.map(row => row[0]),
+                                                                    data:current_load.data.map(row=> row[cols[j]])
+                                                            };
+                        
+                        
+                        if (files[i].includes("FTACV")){
+                            simulations_map[idxs[j]].data[files[i]].harmonics=wasm.harmonics(
+                                                                                    simulations_map[idxs[j]].data[files[i]].times,//time
+                                                                                    simulations_map[idxs[j]].data[files[i]].data,//current
+                                                                                    0.0,//input_freq
+                                                                                    true,//envelope
+                                                                                    10,//truncation_oscillation
+                                                                                    [...Array(6).keys()].map(i => i + 2),//harmonics
+                                                                                    25, //filter_pc,
+                                                                                    1,//decimation_factor
+                                                                                    1/(simulations_map[idxs[j]].data[files[i]].times[1]-simulations_map[idxs[j]].data[files[i]].times[0])
+                                                                                ).harmonics;
+                            }   
+                        }
+                    }
+                }
+            }   
+            
+        
         function updateColorLegend(colorScale, mapping) {
             const legend = d3.select("#colorLegend");
             legend.selectAll("*").remove();
@@ -733,7 +668,7 @@
             return labels[mapping] || mapping;
         }
 
-        function updateStats() {
+        function updateStats(selectedPoints) {
             const statsPanel = d3.select("#statsPanel");
             statsPanel.selectAll("*").remove();
             
@@ -744,18 +679,40 @@
             );
             
             let selectedPoint = null;
-            if(selectedPointId !== null) {
-                selectedPoint = paretoPoints.find(p => p.id === selectedPointId);
+            let cval;
+            if(selectedPointIds.length >0) {
+                //selectedPoint = paretoPoints.find(p => p.id === selectedPointId);
+                    cval = selectedPointIds.map(pointId => {
+                    const point = paretoPoints.find(p => p.id === pointId);
+                    const scoreObj = { "Selected point": pointId };
+                    scores.headers.forEach((score, index) => {
+                        scoreObj[score] = calculateColorValue(point, index).toFixed(3);
+                    });
+                    return scoreObj;
+                });
+                
+            }else{
+                cval=[];
             }
-            
+
             // Create stat items
             const stats = [
                 { label: "Total Points", value: numPoints },
                 { label: "Objectives", value: numObjectives },
-                { label: "Avg Distance", value: avgDistance.toFixed(3) },
-                { label: "Selected Point", value: selectedPoint ? `#${selectedPoint.id}` : "None" }
+                
             ];
-            
+            //{ label: "Selected Point", value: selectedPoint ? `#${selectedPoint.id}` : "None" }
+            if (cval.length==1){
+                for (let key of Object.keys(cval[0])) {
+                    stats.push({label:key, value:cval[0][key]})
+                }
+            }else if (cval.length>1){
+                
+                for (let key of Object.keys(cval[0])) {
+                        stats.push({label:key, value:`${cval[0][key]} | ${cval[1][key]}`})
+                    }
+            }
+
             stats.forEach(stat => {
                 const item = statsPanel.append("div")
                     .attr("class", "stat-item");
@@ -770,30 +727,49 @@
             });
             
             // If a point is selected, show its detailed info
-            if(selectedPoint) {
+            if(selectedPointIds.length >0) {
                 const detailItem = statsPanel.append("div")
-                    .attr("class", "stat-item")
-                    .style("grid-column", "1 / -1");
-                
-                detailItem.append("div")
-                    .style("font-weight", "600")
-                    .style("margin-bottom", "8px")
-                    .text(`Selected Point #${selectedPoint.id} Details:`);
-                
-                const objList = detailItem.append("div")
-                    .style("font-size", "0.9em");
-                for (let i=0; i<numObjectives-1; i++ ){
-                    if (format_params.has(parameters.headers[i+1])){
-                        objList.append("div")
-                        .html(`${label_map[parameters.headers[i+1]]}: ${d3.format(".1e")(selectedPoint.objectives[i])}`);
+                .attr("class", "stat-item")
+                .style("grid-column", "1 / -1");
+
+            const table = detailItem.append("table")
+                .attr("class", "objectives-table")
+                .style("width", "25%")
+                .style("font-size", "0.9em");
+
+            // Create header row
+           
+
+            // Create table body
+            const tbody = table.append("tbody");
+                for (let i = 0; i < numObjectives - 1; i++) {
+                    if (format_params.has(parameters.headers[i + 1])) {
+                    const row = tbody.append("tr");
+                    row.append("td").text(label_map[parameters.headers[i + 1]]);
+                    
+                    if (selectedPointIds.length > 1) {
+                        row.append("td").text(d3.format(".1e")(selectedPoints[0].objectives[i]));
+                        row.append("td").text(d3.format(".1e")(selectedPoints[1].objectives[i]));
+                    } else {
+                        row.append("td").text(d3.format(".1e")(selectedPoints[0].objectives[i]));
                     }
-                    else{
-                         objList.append("div")
-                        .html(`${label_map[parameters.headers[i+1]]}: ${selectedPoint.objectives[i].toFixed(3)}`);
-                    }                    
+                    } else {
+                    const row = tbody.append("tr");
+                    row.append("td").text(label_map[parameters.headers[i + 1]]);
+                    
+                    if (selectedPointIds.length > 1) {
+                        row.append("td").text(selectedPoints[0].objectives[i].toFixed(3));
+                        row.append("td").text(selectedPoints[1].objectives[i].toFixed(3));
+                    } else {
+                        row.append("td").text(selectedPoints[0].objectives[i].toFixed(3));
+                    }
+                    }
                 }
 
                  MathJax.typesetPromise();
+            }
+            if (d3.select("#data-grid").empty()) {
+                createDataGrid("#dataGridContainer");
             }
         }
 
@@ -803,6 +779,70 @@
 
         // Initialize
         generateRandomPoints();
+    function createDataGrid(container) {
+        const gridContainer = d3.select(container).append("div")
+            .attr("class", "data-grid-container")
+            .style("margin-top", "20px")
+            .style("background", "white")
+            .style("border-radius", "15px")
+            .style("padding", "20px")
+            .style("box-shadow", "0 10px 30px rgba(0, 0, 0, 0.1)");
+
+        gridContainer.append("h3")
+            .style("margin-top", "0")
+            .style("color", "#667eea")
+            .text("Data Grid Visualization");
+
+        const gridSvg = gridContainer.append("div")
+            .attr("id", "data-grid")
+            .attr("width", "100%");
+
+        return gridSvg;
+    }
+
+   
+
+    function createCellVisualization(cellG, width, height, row, col) {
+        const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+        const innerWidth = width - margin.left - margin.right;
+        const innerHeight = height - margin.top - margin.bottom;
+
+        const chartG = cellG.append("g")
+            .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+        // Generate sample data for each cell
+        const numPoints = 20;
+        const data = Array.from({ length: numPoints }, (_, i) => ({
+            x: (i / (numPoints - 1)) * innerWidth,
+            y: Math.random() * innerHeight,
+            value: Math.random()
+        }));
+
+    // Create a simple scatter plot in each cell
+    const colorScale = d3.scaleSequential(d3.interpolateViridis)
+        .domain([0, 1]);
+
+    chartG.selectAll(".grid-point")
+        .data(data)
+        .enter()
+        .append("circle")
+        .attr("class", "grid-point")
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y)
+        .attr("r", 2)
+        .attr("fill", d => colorScale(d.value))
+        .attr("opacity", 0.7);
+
+    // Add cell title
+    chartG.append("text")
+        .attr("x", innerWidth / 2)
+        .attr("y", -2)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "10px")
+        .attr("font-weight", "600")
+        .attr("fill", "#666")
+        .text(`Cell ${row + 1},${col + 1}`);
+}
     </script>
 </body>
 </html>

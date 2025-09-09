@@ -8,6 +8,12 @@ export async function loadDataFile(filename = 'data.txt') {
         throw error;
     }
 }
+export function joinPath(...segments) {
+    return segments
+        .join('/')
+        .replace(/\/+/g, '/') // Replace multiple slashes with single slash
+        .replace(/\/$/, '');   // Remove trailing slash
+}
 
 export function parseData(text) {
     const lines = text.split('\n').filter(line => line.trim());

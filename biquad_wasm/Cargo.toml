@@ -1,0 +1,22 @@
+[package]
+name = "biquad_wasm"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+nalgebra = "0.33.0"
+apodize = "1.0"
+biquad = "0.4.2" 
+wasm-bindgen = "0.2"
+rustfft = "6.1.0" # Rust library for FFT
+num-complex = "0.4" # Complex number library for working with FFT
+ndarray = "0.15.6"  
+js-sys = "0.3.70"
+itertools = "0.13.0"
+[dependencies.web-sys]
+version = "0.3.7"
+features = ["console"]
+
+
+[lib]
+crate-type = ["cdylib"] 
