@@ -1,5 +1,5 @@
 import init, * as wasm from './biquad_wasm/pkg/biquad_wasm.js';
-await init();
+await init('./biquad_wasm/pkg/biquad_wasm_bg.wasm');
 export function createCellWithDygraph(container, width, height, title, cellIndex, yaxis, dygraphInstances) {
             const cellDiv = document.createElement('div');
             cellDiv.className = 'grid-cell';
