@@ -1,0 +1,15 @@
+{
+  "name": "biquad_wasm",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "biquad_wasm_bg.wasm",
+    "biquad_wasm.js",
+    "biquad_wasm.d.ts"
+  ],
+  "main": "biquad_wasm.js",
+  "types": "biquad_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
