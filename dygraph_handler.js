@@ -1,5 +1,5 @@
-import init, * as wasm from './biquad_wasm/pkg/biquad_wasm.js';
-await init('./biquad_wasm/pkg/biquad_wasm_bg.wasm');
+import init, * as wasm from 'https://holl95.github.io/Pareto_results/biquad_wasm/pkg/biquad_wasm.js';
+await init('https://holl95.github.io/Pareto_results/biquad_wasm/pkg/biquad_wasm_bg.wasm');
 export function createCellWithDygraph(container, width, height, title, cellIndex, yaxis, dygraphInstances) {
             const cellDiv = document.createElement('div');
             cellDiv.className = 'grid-cell';

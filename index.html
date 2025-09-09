@@ -72,8 +72,8 @@
     <script type="module">
         import { loadDataFile ,joinPath} from './dataLoader.js';
         import {createCellWithDygraph, updateDataGrid, addSimulationTraceToCharts} from "./dygraph_handler.js"
-        import init, * as wasm from './biquad_wasm/pkg/biquad_wasm.js';
-        await init('./biquad_wasm/pkg/biquad_wasm_bg.wasm');
+        import init, * as wasm from 'https://holl95.github.io/Pareto_results/biquad_wasm/pkg/biquad_wasm.js';
+        await init('https://holl95.github.io/Pareto_results/biquad_wasm/pkg/biquad_wasm_bg.wasm');
         const parameters = await loadDataFile('M4D2/Scores/pareto_parameters.txt');
         const scores = await loadDataFile('M4D2/Scores/Colour_scores.txt');
         const raw_scores=await loadDataFile('M4D2/Scores/scores.txt');
